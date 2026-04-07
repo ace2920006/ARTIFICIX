@@ -35,6 +35,13 @@ export function Layout() {
         description: p.count != null ? `${p.count} orders` : undefined,
       });
     });
+    socket.on("whatsapp:reply", (p: { body: string; to: string }) => {
+      const digits = p.to.replace(/\D/g, "");
+      const tail = digits.length >= 4 ? digits.slice(-4) : p.to;
+      toast.message("WhatsApp auto-reply (mock)", {
+        description: `${p.body.length > 140 ? `${p.body.slice(0, 140)}…` : p.body} · …${tail}`,
+      });
+    });
     return () => {
       socket.disconnect();
     };
@@ -46,7 +53,7 @@ export function Layout() {
         <div className="brand">
           <span className="brand-mark" aria-hidden />
           <div>
-            <div className="brand-title">OMS Control</div>
+            <div className="brand-title">Hey!! Parth</div>
             <div className="brand-sub">Centralized orders</div>
           </div>
         </div>

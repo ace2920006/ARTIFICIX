@@ -4,6 +4,7 @@ import { Order, ORDER_STATUSES, type OrderStatus, CHANNELS, type Channel } from 
 import { applyRoutingRules } from "../lib/routing.js";
 import { generateOrderNumber } from "../lib/orderNumber.js";
 import { notifyOrderCreated, notifyOrderUpdated } from "../lib/notifications.js";
+import { maybeSendWhatsAppAutoReply } from "../lib/whatsappAutoReply.js";
 
 const STATUS_ORDER: OrderStatus[] = [...ORDER_STATUSES];
 
@@ -110,6 +111,18 @@ export function createOrdersRouter(io: Server) {
 
       notifyOrderCreated(String(order._id), order.orderNumber);
       io.emit("order:created", { orderId: String(order._id), orderNumber: order.orderNumber });
+      maybeSendWhatsAppAutoReply(
+        io,
+        {
+          channel: order.channel as Channel,
+          orderId: String(order._id),
+          orderNumber: order.orderNumber,
+          phone: order.phone,
+          customerName: order.customerName,
+          total: order.total,
+        },
+        "order_created"
+      );
       res.status(201).json(order);
     } catch (e) {
       res.status(400).json({ error: String(e) });
@@ -182,6 +195,19 @@ export function createOrdersRouter(io: Server) {
       await order.save();
       notifyOrderUpdated(String(order._id), order.orderNumber, `Status → ${requested}`);
       io.emit("order:updated", { orderId: String(order._id), orderNumber: order.orderNumber });
+      maybeSendWhatsAppAutoReply(
+        io,
+        {
+          channel: order.channel as Channel,
+          orderId: String(order._id),
+          orderNumber: order.orderNumber,
+          phone: order.phone,
+          customerName: order.customerName,
+          total: order.total,
+        },
+        "status_updated",
+        requested
+      );
       res.json(order);
     } catch (e) {
       res.status(400).json({ error: String(e) });

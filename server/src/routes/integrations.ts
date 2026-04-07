@@ -4,9 +4,14 @@ import { Order } from "../models/Order.js";
 import { applyRoutingRules } from "../lib/routing.js";
 import { generateOrderNumber } from "../lib/orderNumber.js";
 import { notifyOrderCreated } from "../lib/notifications.js";
+import { listWhatsAppAutoReplies, maybeSendWhatsAppAutoReply } from "../lib/whatsappAutoReply.js";
 
 export function createIntegrationsRouter(io: Server) {
   const r = Router();
+
+  r.get("/whatsapp/auto-replies", (_req, res) => {
+    res.json({ items: listWhatsAppAutoReplies(50) });
+  });
 
   r.post("/whatsapp/mock", async (req, res) => {
     try {
@@ -61,10 +66,25 @@ export function createIntegrationsRouter(io: Server) {
       });
       notifyOrderCreated(String(order._id), order.orderNumber);
       io.emit("order:created", { orderId: String(order._id), orderNumber: order.orderNumber });
+      const autoReply = maybeSendWhatsAppAutoReply(
+        io,
+        {
+          channel: "whatsapp",
+          orderId: String(order._id),
+          orderNumber: order.orderNumber,
+          phone: order.phone,
+          customerName: order.customerName,
+          total: order.total,
+        },
+        "order_created"
+      );
       res.status(201).json({
         messageId: `wamid.mock.${order._id}`,
         orderId: String(order._id),
         orderNumber: order.orderNumber,
+        autoReply: autoReply
+          ? { id: autoReply.id, body: autoReply.body, at: autoReply.at }
+          : null,
       });
     } catch (e) {
       res.status(400).json({ error: String(e) });

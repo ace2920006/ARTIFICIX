@@ -825,3 +825,20 @@ a {
   border-radius: 999px;
   background: linear-gradient(90deg, #5b8cff, #8b5cf6);
 }
+
+.reply-log {
+  margin-top: 0.5rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.reply-row {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(36, 48, 65, 0.6);
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.reply-row:last-child {
+  border-bottom: none;
+}

@@ -82,7 +82,20 @@ flowchart LR
 - `GET /api/analytics/summary` - KPI and chart metrics
 - `GET /api/analytics/insights` - heuristic smart insights
 - `POST /api/integrations/whatsapp/mock` - mocked integration endpoint
+- `GET /api/integrations/whatsapp/auto-replies` - recent simulated outbound WhatsApp messages
 - `GET /api/notifications` - recent notifications
+
+### WhatsApp automatic replies (demo)
+
+For orders with a customer phone number, the API auto-generates WhatsApp template-style messages when:
+
+1. An order is created (confirmation + total)
+2. Status is advanced (`PATCH /api/orders/:id/status`) — customer gets a short update
+
+This is a **mock** (logged + Socket.IO `whatsapp:reply`) and includes a ready `wa.me` link per message. For production, swap the implementation in `server/src/lib/whatsappAutoReply.ts` with [Meta WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) (send message + optional webhook for inbound).
+
+Set `WHATSAPP_AUTO_REPLY_ENABLED=false` in `server/.env` to turn auto-replies off.
+Set `WHATSAPP_ADMIN_NUMBER=9209818840` to define the admin sender number. Customer phone entered in `phone` is used as the recipient.
 
 ## Why this is hackathon-friendly
 

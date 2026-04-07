@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import type { Channel, LineItem } from "../types/order";
@@ -25,6 +25,18 @@ const empty: FormState = {
   fragile: false,
 };
 
+type WaAutoReply = {
+  id: string;
+  from: string;
+  to: string;
+  channel: string;
+  orderNumber: string;
+  trigger: "order_created" | "status_updated";
+  body: string;
+  waLink: string;
+  at: string;
+};
+
 function lineFromForm(f: FormState): LineItem[] {
   return [
     {
@@ -43,6 +55,22 @@ export function IntakePage() {
   const [waThread, setWaThread] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [seedCount, setSeedCount] = useState(12);
+  const [waReplies, setWaReplies] = useState<WaAutoReply[]>([]);
+
+  const loadWaReplies = useCallback(async () => {
+    try {
+      const data = await api<{ items: WaAutoReply[] }>(
+        "/api/integrations/whatsapp/auto-replies"
+      );
+      setWaReplies(data.items);
+    } catch {
+      setWaReplies([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadWaReplies();
+  }, [loadWaReplies]);
 
   async function submit(
     channel: Channel,
@@ -77,6 +105,7 @@ export function IntakePage() {
         }),
       });
       toast.success("WhatsApp mock order ingested");
+      await loadWaReplies();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
@@ -192,8 +221,9 @@ export function IntakePage() {
         <section className="panel">
           <h2>WhatsApp (mock API)</h2>
           <p className="muted small">
-            <code>POST /api/integrations/whatsapp/mock</code> — returns a fake
-            message id.
+            <code>POST /api/integrations/whatsapp/mock</code> — ingests an order
+            and triggers an automatic customer reply (mock). Real WhatsApp uses
+            Meta Cloud API in production.
           </p>
           <label className="field">
             Thread id (optional)
@@ -216,6 +246,41 @@ export function IntakePage() {
           </button>
         </section>
       </div>
+
+      <section className="panel mt-2">
+        <div className="page-head" style={{ marginBottom: "0.75rem" }}>
+          <div>
+            <h2>WhatsApp auto-replies (mock log)</h2>
+            <p className="muted small">
+              Outbound messages are auto-generated for customer contacts with a
+              ready WhatsApp send link. Status changes also trigger updates.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={loadWaReplies}
+          >
+            Refresh log
+          </button>
+        </div>
+        <div className="reply-log">
+          {waReplies.length === 0 && (
+            <p className="muted">No auto-replies yet. Ingest a WhatsApp order above.</p>
+          )}
+          {waReplies.map((r) => (
+            <div key={r.id} className="reply-row">
+              <div className="muted small">
+                {new Date(r.at).toLocaleString()} · {r.orderNumber} · {r.channel} · {r.from} to {r.to} · {r.trigger.replace(/_/g, " ")}
+              </div>
+              <div>{r.body}</div>
+              <a className="link small" href={r.waLink} target="_blank" rel="noreferrer">
+                Open WhatsApp chat
+              </a>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
