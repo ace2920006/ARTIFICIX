@@ -55,3 +55,17 @@ export type AnalyticsSummary = {
   ordersPerHour: { hour: number; count: number }[];
   topProducts: { name: string; qty: number; revenue: number }[];
 };
+
+export type InsightCard = {
+  key: string;
+  label: string;
+  value: number;
+  tone: "ok" | "warn" | "info";
+  detail: string;
+};
+
+export type InsightsPayload = {
+  cards: InsightCard[];
+  channels: { channel: string; count: number }[];
+  generatedAt: string;
+};

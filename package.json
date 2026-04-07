@@ -2,7 +2,13 @@
   "name": "oms-hackathon",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\""
+    "setup": "node scripts/setup.mjs",
+    "dev": "concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "db:up": "docker compose up -d mongo",
+    "db:down": "docker compose down",
+    "judge:start": "npm run setup && npm run db:up && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

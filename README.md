@@ -1,73 +1,93 @@
-# React + TypeScript + Vite
+# ARTIFICIX - Centralized Order Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Hackathon-ready full-stack OMS with:
+- Multi-channel order intake (`website`, `admin`, `whatsapp`, `pos`)
+- Smart routing rules (warehouse, priority, fragile handling)
+- Real-time updates via Socket.IO
+- Live dashboard + analytics
+- Heuristic "Smart Insights" panel for quick operational decisions
 
-Currently, two official plugins are available:
+## 1-Minute Judge Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From project root:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run judge:start
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This does:
+1. installs all dependencies (root + server + client)
+2. creates `.env` files from examples (if missing)
+3. starts MongoDB via Docker
+4. runs server + client
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+App URLs:
+- Frontend: `http://localhost:5173`
+- API health: `http://localhost:4000/api/health`
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Manual Setup (If needed)
+
+```bash
+# project root
+npm run setup
+npm run db:up
+npm run dev
 ```
+
+If Docker is not available, install MongoDB and set `MONGODB_URI` in `server/.env`.
+
+## Environment Variables
+
+### `server/.env`
+```env
+PORT=4000
+MONGODB_URI=mongodb://127.0.0.1:27017/oms
+CLIENT_URL=http://localhost:5173
+```
+
+### `client/.env`
+```env
+VITE_API_URL=http://localhost:4000
+```
+
+## Demo Flow (for judges)
+
+1. Open Dashboard (`/`) and click **Mock: delayed alert** (toast demo)
+2. Go to **Intake**, create an order (try fragile + high total)
+3. Return to Dashboard and watch realtime table update
+4. Open **Analytics** for revenue + hourly chart + top products
+5. Open **Track** and search using order number
+6. Open two tabs to observe live updates and notifications
+
+## Architecture
+
+```mermaid
+flowchart LR
+  C[React Client] -->|REST| S[Express API]
+  C -->|Socket.IO| WS[Realtime Gateway]
+  WS --> S
+  S --> M[(MongoDB)]
+  S --> R[Routing Rules Engine]
+  S --> N[Notification Store]
+  S --> A[Analytics + Insights]
+```
+
+## API Highlights
+
+- `GET /api/health` - health check
+- `POST /api/orders` - create order
+- `GET /api/orders` - list/filter orders
+- `PATCH /api/orders/:id/status` - controlled status progression
+- `POST /api/orders/generate-samples` - generate demo dataset
+- `GET /api/analytics/summary` - KPI and chart metrics
+- `GET /api/analytics/insights` - heuristic smart insights
+- `POST /api/integrations/whatsapp/mock` - mocked integration endpoint
+- `GET /api/notifications` - recent notifications
+
+## Why this is hackathon-friendly
+
+- Fast local startup (`judge:start`)
+- Clear env + setup instructions
+- Real-time, visible system behavior
+- Practical automation logic (routing + insights)
+- Architecture and demo flow documented end-to-end

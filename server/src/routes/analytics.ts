@@ -3,6 +3,64 @@ import { Order } from "../models/Order.js";
 
 export const analyticsRouter = Router();
 
+analyticsRouter.get("/insights", async (_req, res) => {
+  try {
+    const totalOrders = await Order.countDocuments();
+    const delayedCandidates = await Order.countDocuments({
+      status: { $in: ["pending", "accepted", "packed"] },
+      createdAt: { $lte: new Date(Date.now() - 12 * 60 * 60 * 1000) },
+    });
+    const fragileOpen = await Order.countDocuments({
+      specialHandling: true,
+      status: { $in: ["pending", "accepted", "packed", "shipped"] },
+    });
+
+    const busiestChannels = await Order.aggregate([
+      { $group: { _id: "$channel", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 2 },
+    ]);
+
+    const insightCards = [
+      {
+        key: "risk",
+        label: "Delay risk",
+        value: delayedCandidates,
+        tone: delayedCandidates > 0 ? "warn" : "ok",
+        detail:
+          delayedCandidates > 0
+            ? "Orders pending >12h need escalation"
+            : "No delayed order detected",
+      },
+      {
+        key: "fragile",
+        label: "Fragile in pipeline",
+        value: fragileOpen,
+        tone: fragileOpen > 3 ? "warn" : "info",
+        detail: "High-fragility load suggests packaging focus",
+      },
+      {
+        key: "coverage",
+        label: "Routing confidence",
+        value: totalOrders === 0 ? 0 : Math.max(0, 100 - Math.round((delayedCandidates / totalOrders) * 100)),
+        tone: "info",
+        detail: "Simple heuristic score from live operations",
+      },
+    ];
+
+    res.json({
+      cards: insightCards,
+      channels: busiestChannels.map((x) => ({
+        channel: String(x._id),
+        count: Number(x.count),
+      })),
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
+  }
+});
+
 analyticsRouter.get("/summary", async (req, res) => {
   try {
     const dayParam = req.query.day as string | undefined;

@@ -42,5 +42,13 @@ mongoose
   })
   .catch((err) => {
     console.error("MongoDB connection failed:", err);
+    console.error(
+      [
+        "Quick fix:",
+        "1) From project root run: npm run db:up",
+        "2) Then run again: npm run dev",
+        "If Docker is unavailable, install/start MongoDB and verify MONGODB_URI in server/.env.",
+      ].join("\n")
+    );
     process.exit(1);
   });
